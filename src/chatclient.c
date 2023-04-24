@@ -26,6 +26,9 @@ int handle_client_socket() {
 // no signal handling in the client 
 int main(int argc, char **argv) {
     /* TODO */
+	// part 0: my id is 1057; random number = 24; 1000*24+057 = 24057
+
+	// part 1 - cmd line arg checking
 	// check for right number of command line args 
 	if(argc == 1 || argc > 3){
 		fprintf(stderr, "Usage: %s <server IP> <port>\n", argv[0]);
@@ -50,4 +53,30 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: Port %s is out of range. Port must be in range [1024, 65535].\n", argv[2]); 
 		return EXIT_FAILURE; 
 	}
+
+	// part 2 - prompt for username 
+	bool validUsername = false;
+	while(!validUsername){
+		printf("Enter a username: "); 
+		if(fgets(username, sizeof(username), stdin) == NULL){
+			perror("fgets()"); 
+		}
+		if(strlen(username) == 0 || strlen(username) == 1){
+			continue;
+		}
+		else if (strlen(username) > MAX_NAME_LEN){
+			printf("Sorry, limit your username to %d characters.\n", MAX_NAME_LEN);
+			continue;
+		}
+		else {
+			validUsername = true;
+		}
+	}
+	char *eoln = strchr(username, '\n'); 
+	if(eoln != NULL){
+		*eoln = '\0';
+	}
+	printf("Hello, %s. Let's try to connect to the server.\n", username); 
+	
+
 }
