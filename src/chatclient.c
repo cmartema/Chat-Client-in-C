@@ -61,9 +61,13 @@ int main(int argc, char **argv) {
 		if(fgets(username, sizeof(username), stdin) == NULL){
 			perror("fgets()"); 
 		}
+		// user length is 0 or they just enter an enter
 		if(strlen(username) == 0 || strlen(username) == 1){
 			continue;
 		}
+		// username is too long - however the buffer will always read in 
+		// a certain amount so this needs to be fixed 
+		// (probably fix how we're reading it in
 		else if (strlen(username) > MAX_NAME_LEN){
 			printf("Sorry, limit your username to %d characters.\n", MAX_NAME_LEN);
 			continue;
@@ -78,5 +82,22 @@ int main(int argc, char **argv) {
 	}
 	printf("Hello, %s. Let's try to connect to the server.\n", username); 
 	
+	// part 3 
+	// create tcp socket 
+	
+	// connect to the server 
+	
+	// receive welcome message from server - with error checking
+	
+	// print new line, welcome message, and two more lines
+	
+	// send username to server 
+	
 
+	// part 4
+	// use fd_set and select to loop forever
+	// use STDIN_FILENO to prompt for user input 
+	
+	// check activity on client socket and store in inbuf; if "bye", exit
+	// close socket and terminate 
 }
