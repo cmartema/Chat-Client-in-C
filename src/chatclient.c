@@ -80,8 +80,20 @@ int main(int argc, char **argv) {
 	printf("Hello, %s. Let's try to connect to the server.\n", username); 
 	
 	// part 3 
-	// create tcp socket 
-	
+	// create tcp socket
+	/* 
+	int client_socket, bytes_recvd, ip_conversion, retval = EXIT_SUCCESS; 
+	struct sockaddr_in server_addr; 
+	socklen_t addrlen = sizeof(struct sockaddr_in); 
+	char buf[BUFLEN]; 
+	char *addr_str = argv[1]; 
+
+	if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+		fprintf(stderr, "Error: Failed to create socket. %s.\n", strerror(errno)); 
+		ret_val = EXIT_FAILURE; 
+		goto EXIIT; 
+	}
+*/	
 	// connect to the server 
 	
 	// receive welcome message from server - with error checking
