@@ -27,7 +27,7 @@ int handle_client_socket() {
 int main(int argc, char **argv) {
     /* TODO */
 	// part 0: my id is 1057; random number = 24; 1000*24+057 = 24057
-
+	
 	// part 1 - cmd line arg checking
 	// check for right number of command line args 
 	if(argc == 1 || argc > 3){
@@ -58,16 +58,13 @@ int main(int argc, char **argv) {
 	bool validUsername = false;
 	while(!validUsername){
 		printf("Enter a username: "); 
-		if(fgets(username, sizeof(username), stdin) == NULL){
-			perror("fgets()"); 
-		}
+		if(scanf("%s", username) < 1){
+			perror("scanf()");
+		}	
 		// user length is 0 or they just enter an enter
 		if(strlen(username) == 0 || strlen(username) == 1){
 			continue;
 		}
-		// username is too long - however the buffer will always read in 
-		// a certain amount so this needs to be fixed 
-		// (probably fix how we're reading it in
 		else if (strlen(username) > MAX_NAME_LEN){
 			printf("Sorry, limit your username to %d characters.\n", MAX_NAME_LEN);
 			continue;
