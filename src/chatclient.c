@@ -26,8 +26,11 @@ int handle_client_socket() {
 // no signal handling in the client 
 int main(int argc, char **argv) {
     /* TODO */
-	// part 0: my id is 1057; random number = 24; 1000*24+057 = 24057
 	
+	// part 0: my id is 1057: random number = 24: 1000*24+057 = 24057 - Anita
+	// part 0: my id is 1234: random number = 24: 1000*24+234 = 24234 - Chris
+	
+	 
 	// part 1 - cmd line arg checking
 	// check for right number of command line args 
 	if(argc == 1 || argc > 3){
@@ -79,28 +82,80 @@ int main(int argc, char **argv) {
 	}
 	printf("Hello, %s. Let's try to connect to the server.\n", username); 
 	
-	// part 3 
+	// part 3
+	
+       
+
 	// create tcp socket
-	/* 
+	
 	int client_socket, bytes_recvd, ip_conversion, retval = EXIT_SUCCESS; 
 	struct sockaddr_in server_addr; 
 	socklen_t addrlen = sizeof(struct sockaddr_in); 
 	char buf[BUFLEN]; 
 	char *addr_str = argv[1]; 
 
-	if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+	// Create a reliable, stream socket using TCP
+	if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		fprintf(stderr, "Error: Failed to create socket. %s.\n", strerror(errno)); 
-		ret_val = EXIT_FAILURE; 
-		goto EXIIT; 
+		retval = EXIT_FAILURE; 
+		goto EXIT; 
 	}
-*/	
+
+	memset(&server_addr, 0, addrlen); //Zero out structure and prevents bugs 	
+
 	// connect to the server 
+	ip_conversion = inet_pton(AF_INET, addr_str, &ip_conversion);
+	if (ip_conversion == 0) {
+		fprintf(stderr, "Error: Invalid IP address '%s'.\n", addr_str);
+		retval = EXIT_FAILURE;
+		goto EXIT;
+	} else if (ip_conversion < 0) {
+		fprintf(stderr, "Error: Failed to convert IP address. %s.\n", strerror(errno));
+		retval = EXIT_FAILURE;
+		goto EXIT;
+	}
+
+	server_addr.sin_family = AF_INET; // Internet adress family
+	int PORT = atoi(argv[2]);
+	server_addr.sin_port = htons(PORT); // im using my port check in case
+	server_addr.sin_addr.s_addr = ip_conversion;
 	
+	if (connect(client_socket, (struct sockaddr *)&server_addr, addrlen) < 0) {
+		fprintf(stderr, "Error: Failed to connect to server. %s.\n",
+				strerror(errno));
+		retval = EXIT_FAILURE;
+		goto EXIT;
+	}
+
 	// receive welcome message from server - with error checking
+	memset(inbuf, 0, BUFLEN);
+	if ((bytes_recvd = recv(client_socket, buf, BUFLEN-1, 0)) < 0) {
+		fprintf(stderr, "Error: Failed to receive welcome message. %s.\n", strerror(errno));
+		retval = EXIT_FAILURE;
+		goto EXIT;
+	} else if (bytes_recvd == 0) {
+		fprintf(stderr, "Error: Server closed the connection.\n");
+		retval = EXIT_FAILURE;
+		goto EXIT;
+	} else {
+		// print new line, welcome message, and two more lines
+		buf[bytes_recvd] = '\0';
+		printf("\n%s\n\n", buf);
+
+		// send username to server 
+		snprintf(outbuf, MAX_MSG_LEN, "%s\n", username);
+		if (send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
+			fprintf(stderr, "Error: Failed to send username to server. %s.\n", 
+					strerror(errno));
+			retval = EXIT_FAILURE;
+			goto EXIT;
+		}
+	}
+		
+
 	
-	// print new line, welcome message, and two more lines
 	
-	// send username to server 
+	
 	
 
 	// part 4
@@ -108,5 +163,14 @@ int main(int argc, char **argv) {
 	// use STDIN_FILENO to prompt for user input 
 	
 	// check activity on client socket and store in inbuf; if "bye", exit
-	// close socket and terminate 
+
+
+// close socket and terminate 
+EXIT:
+	// if client socket has a file descriptor, close it.
+	if (fcntl(client_socket, F_GETFD) != -1) {
+		close(client_socket);
+	}
+	return retval;
+	
 }
