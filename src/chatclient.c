@@ -14,6 +14,23 @@ char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
 int handle_stdin(int client_socket){ 	
+	if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
+		perror("fgets()");
+	}
+	char *eoln = strchr(outbuf, '\n'); 
+	if(eoln != NULL){
+		*eoln = '\0';
+	}
+
+	if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
+		fprintf(stderr, "Error: Failed to send message to server.");
+	}
+
+	if(!strcmp(outbuf, "bye")){
+		printf("Goodbye.\n");
+		return 1; 
+	}
+
 	return 0; 
 }
 
