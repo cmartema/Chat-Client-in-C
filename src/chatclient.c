@@ -13,13 +13,29 @@ char username[MAX_NAME_LEN + 1];
 char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
-int handle_stdin() {
-    /* TODO */
+int handle_stdin(int client_socket){ 	
 	return 0; 
 }
 
-int handle_client_socket() {
-    /* TODO */
+int handle_client_socket(int client_socket){
+	 memset(inbuf, 0, BUFLEN);
+	 int bytes_recvd; 
+         if ((bytes_recvd = recv(client_socket, inbuf, BUFLEN-1, 0)) < 0) {
+		 if(errno != EINTR){
+			 fprintf(stderr, "Warning: Failed to receive incoming message.\n");
+		 }
+	 } else if (bytes_recvd == 0) {
+		 fprintf(stderr, "\nConnection to server has been lost.\n");
+	 } else {
+		 if(!strcmp(inbuf, "bye")){
+			 printf("\nServer initiated shutdown.\n");
+			 return 1;
+		 }
+		 else{
+			 printf("%s\n", inbuf); 
+		 }
+	 }
+
 	return 0; 
 }
 
@@ -84,8 +100,6 @@ int main(int argc, char **argv) {
 	
 	// part 3
 	
-       
-
 	// create tcp socket
 	
 	int client_socket, bytes_recvd, ip_conversion, retval = EXIT_SUCCESS; 
@@ -94,7 +108,6 @@ int main(int argc, char **argv) {
 	char buf[BUFLEN]; 
 	char *addr_str = argv[1]; 
 
-	// Create a reliable, stream socket using TCP
 	if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		fprintf(stderr, "Error: Failed to create socket. %s.\n", strerror(errno)); 
 		retval = EXIT_FAILURE; 
@@ -102,9 +115,8 @@ int main(int argc, char **argv) {
 	}
 
 	memset(&server_addr, 0, addrlen); //Zero out structure and prevents bugs 	
-
 	// connect to the server 
-	ip_conversion = inet_pton(AF_INET, addr_str, &ip_conversion);
+	ip_conversion = inet_pton(AF_INET, addr_str, &server_addr.sin_addr);
 	if (ip_conversion == 0) {
 		fprintf(stderr, "Error: Invalid IP address '%s'.\n", addr_str);
 		retval = EXIT_FAILURE;
@@ -118,7 +130,7 @@ int main(int argc, char **argv) {
 	server_addr.sin_family = AF_INET; // Internet adress family
 	int PORT = atoi(argv[2]);
 	server_addr.sin_port = htons(PORT); // im using my port check in case
-	server_addr.sin_addr.s_addr = ip_conversion;
+	//server_addr.sin_addr.s_addr = ip_conversion;
 	
 	if (connect(client_socket, (struct sockaddr *)&server_addr, addrlen) < 0) {
 		fprintf(stderr, "Error: Failed to connect to server. %s.\n",
@@ -152,20 +164,30 @@ int main(int argc, char **argv) {
 		}
 	}
 		
-
-	
-	
-	
-	
-
 	// part 4
 	// use fd_set and select to loop forever
 	// use STDIN_FILENO to prompt for user input 
-	
 	// check activity on client socket and store in inbuf; if "bye", exit
+	fd_set read_fds;
+	FD_ZERO(&read_fds);
+	FD_SET(client_socket, &read_fds);
+
+	while(true){
+		if(select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0){
+			perror("select failed"); 
+			goto EXIT;
+		}
+
+		if(FD_ISSET(client_socket, &read_fds)){
+			handle_client_socket(client_socket);
+		}
+
+		if(FD_ISSET(STDIN_FILENO, &read_fds)){
+			handle_stdin(client_socket);
+		}	
+	}
 
 
-// close socket and terminate 
 EXIT:
 	// if client socket has a file descriptor, close it.
 	if (fcntl(client_socket, F_GETFD) != -1) {
