@@ -13,22 +13,29 @@ char username[MAX_NAME_LEN + 1];
 char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
-int handle_stdin(int client_socket){ 	
-	if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
-		perror("fgets()");
-	}
-	char *eoln = strchr(outbuf, '\n'); 
-	if(eoln != NULL){
-		*eoln = '\0';
-	}
+int handle_stdin(int client_socket){
+	while(true){	
+		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
+			perror("fgets()");
+		}
+		char *eoln = strchr(outbuf, '\n'); 
+		if(eoln != NULL){
+			*eoln = '\0';
+		}
+		
+		if(strlen(outbuf) > MAX_MSG_LEN){
+			printf("Sorry, limit your message to 1 line of at most %d characters.\n", MAX_MSG_LEN);
+		}
 
-	if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
-		fprintf(stderr, "Error: Failed to send message to server.");
-	}
+		if(!strcmp(outbuf, "bye")){
+			printf("Goodbye.\n");
+			return 1; 
+		}
 
-	if(!strcmp(outbuf, "bye")){
-		printf("Goodbye.\n");
-		return 1; 
+		if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
+			fprintf(stderr, "Error: Failed to send message to server.");
+		}
+
 	}
 
 	return 0; 
@@ -159,11 +166,11 @@ int main(int argc, char **argv) {
 	// receive welcome message from server - with error checking
 	memset(inbuf, 0, BUFLEN);
 	if ((bytes_recvd = recv(client_socket, buf, BUFLEN-1, 0)) < 0) {
-		fprintf(stderr, "Error: Failed to receive welcome message. %s.\n", strerror(errno));
+		fprintf(stderr, "Warning: Failed to receive incoming message. %s.\n", strerror(errno));
 		retval = EXIT_FAILURE;
 		goto EXIT;
 	} else if (bytes_recvd == 0) {
-		fprintf(stderr, "Error: Server closed the connection.\n");
+		fprintf(stderr, "Connection to server has been lost\n");
 		retval = EXIT_FAILURE;
 		goto EXIT;
 	} else {
