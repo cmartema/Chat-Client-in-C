@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 	printf("Hello, %s. Let's try to connect to the server.\n", username); 
 	
 	// part 3
-	
+	// TODO - only one client is connecting at a time 	
 	// create tcp socket
 	
 	int client_socket, bytes_recvd, ip_conversion, retval = EXIT_SUCCESS; 
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 	}
 
 	// receive welcome message from server - with error checking
-	memset(inbuf, 0, BUFLEN);
+	//memset(inbuf, 0, BUFLEN);
 	if ((bytes_recvd = recv(client_socket, buf, BUFLEN-1, 0)) < 0) {
 		fprintf(stderr, "Warning: Failed to receive incoming message. %s.\n", strerror(errno));
 		retval = EXIT_FAILURE;
@@ -175,17 +175,23 @@ int main(int argc, char **argv) {
 		goto EXIT;
 	} else {
 		// print new line, welcome message, and two more lines
+		printf("message from server received\n"); 
 		buf[bytes_recvd] = '\0';
 		printf("\n%s\n\n", buf);
 
-		// send username to server 
-		snprintf(outbuf, MAX_MSG_LEN, "%s\n", username);
-		if (send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
+		// send username to server
+		/*snprintf(outbuf, MAX_MSG_LEN, "%s", username);
+		char *eoln = strchr(outbuf, '\n');
+		if(eoln != NULL){
+			*eoln = '\0';
+		}*/
+		if (send(client_socket, username, strlen(username), 0) < 0) {
 			fprintf(stderr, "Error: Failed to send username to server. %s.\n", 
 					strerror(errno));
 			retval = EXIT_FAILURE;
 			goto EXIT;
 		}
+		send(client_socket, '\0', 1, 0); 	
 	}
 		
 	// part 4
