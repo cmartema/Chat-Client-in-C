@@ -17,10 +17,20 @@ int handle_stdin(int client_socket){
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
 			perror("fgets()");
 		}
-		//char *eoln = strchr(outbuf, '\n'); 
-		//if(eoln != NULL){
-		//	*eoln = '\0';
-		//}
+		
+		/*
+		size_t len = strlen(outbuf);
+		if (len > 0 && (outbuf[len - 1] == '\r' || outbuf[len - 1] == '\n')) {
+			outbuf[--len] = '\0';
+		}
+		*/
+
+		
+		char *eoln = strchr(outbuf, '\n'); 
+		if(eoln != NULL){
+			*eoln = '\0';
+		} 
+		
 		if(strlen(outbuf) > MAX_MSG_LEN){
 			fprintf(stderr, "Sorry, limit your message to 1 line of at most %d characters.\n", MAX_MSG_LEN);
 			/* Clears stdin */
@@ -37,7 +47,7 @@ int handle_stdin(int client_socket){
 			fprintf(stderr, "Error: Failed to send message to server.\n");
 			return -1;
 		}
-		//printf("SENDING: %s\n", outbuf); 
+		printf("SENDING: %s\n", outbuf); 
 		//printf("[%s]: ", username); 
 
 	return 0; 
@@ -57,7 +67,10 @@ int handle_client_socket(int client_socket){ memset(inbuf, 0, BUFLEN);
 			 return -1;
 		 }
 		 else{
-			 printf("%s", inbuf); 
+			 printf("RECEIVING: %s\n", outbuf);
+			 printf("%s\n", inbuf); 		
+			
+
 		 }
 	 }
 
