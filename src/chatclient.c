@@ -14,7 +14,8 @@ char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
 int handle_stdin(int client_socket){
-	while(true){
+//	while(true){
+		printf("[%s]:", username);
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
 			perror("fgets()");
 		}
@@ -27,7 +28,7 @@ int handle_stdin(int client_socket){
 			/* Clears stdin */
 			int c;
 			while ((c = getchar()) != '\n' && c != EOF) {}
-			continue;
+	//		continue;
 		}
 
 		if(!strcmp(outbuf, "bye")){
@@ -35,13 +36,13 @@ int handle_stdin(int client_socket){
 			return -1; 
 		}
 
-		strcat(outbuf, "\n");	
+	
 		if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
 			fprintf(stderr, "Error: Failed to send message to server.\n");
 			return -1;
 		}
 
-	}
+//	}
 
 	return 0; 
 }
@@ -200,7 +201,7 @@ int main(int argc, char **argv) {
 	while(running){
 		FD_ZERO(&read_fds);
 		FD_SET(client_socket, &read_fds);
-		FD_SET(STDIN_FILENO, &read_fds);	
+		FD_SET(STDIN_FILENO, &read_fds);
 		if (select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0 && errno != EINTR ) {
 			fprintf(stderr, "Error: Failed to select on file decriptors. %s.\n",
 					strerror(errno));
@@ -215,14 +216,16 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {
-			printf("[%s]:", username);
-			fflush(stdin);
+		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {	
 			if (handle_stdin(client_socket) < 0) {
 				retval = EXIT_FAILURE;	 	
 				goto EXIT;
 			}
-		}	
+		}
+
+		
+
+			
 	}
 
 
