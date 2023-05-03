@@ -14,7 +14,7 @@ char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
 int handle_stdin(int client_socket){
-	while(true){	
+	while(true){
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
 			perror("fgets()");
 		}
@@ -22,18 +22,23 @@ int handle_stdin(int client_socket){
 		if(eoln != NULL){
 			*eoln = '\0';
 		}
-		
 		if(strlen(outbuf) > MAX_MSG_LEN){
-			printf("Sorry, limit your message to 1 line of at most %d characters.\n", MAX_MSG_LEN);
+			fprintf(stderr, "Sorry, limit your message to 1 line of at most %d characters.\n", MAX_MSG_LEN);
+			/* Clears stdin */
+			int c;
+			while ((c = getchar()) != '\n' && c != EOF) {}
+			continue;
 		}
 
 		if(!strcmp(outbuf, "bye")){
 			printf("Goodbye.\n");
-			return 1; 
+			return -1; 
 		}
 
+		strcat(outbuf, "\n");	
 		if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
-			fprintf(stderr, "Error: Failed to send message to server.");
+			fprintf(stderr, "Error: Failed to send message to server.\n");
+			return -1;
 		}
 
 	}
@@ -53,7 +58,7 @@ int handle_client_socket(int client_socket){
 	 } else {
 		 if(!strcmp(inbuf, "bye")){
 			 printf("\nServer initiated shutdown.\n");
-			 return 1;
+			 return -1;
 		 }
 		 else{
 			 printf("%s\n", inbuf); 
@@ -109,7 +114,7 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		else if (strlen(username) > MAX_NAME_LEN){
-			printf("Sorry, limit your username to %d characters.\n", MAX_NAME_LEN);
+			fprintf(stderr, "Sorry, limit your username to %d characters.\n", MAX_NAME_LEN);
 			continue;
 		}
 		else {
@@ -174,24 +179,16 @@ int main(int argc, char **argv) {
 		retval = EXIT_FAILURE;
 		goto EXIT;
 	} else {
-		// print new line, welcome message, and two more lines
-		printf("message from server received\n"); 
+		// print new line, welcome message, and two more lines 
 		buf[bytes_recvd] = '\0';
 		printf("\n%s\n\n", buf);
-
-		// send username to server
-		/*snprintf(outbuf, MAX_MSG_LEN, "%s", username);
-		char *eoln = strchr(outbuf, '\n');
-		if(eoln != NULL){
-			*eoln = '\0';
-		}*/
-		if (send(client_socket, username, strlen(username), 0) < 0) {
-			fprintf(stderr, "Error: Failed to send username to server. %s.\n", 
+		
+		if (send(client_socket, username, strlen(username) + 1, 0) < 0) {
+			fprintf(stderr, "Error: Failed to send username to server. %s.\n",
 					strerror(errno));
 			retval = EXIT_FAILURE;
 			goto EXIT;
 		}
-		send(client_socket, '\0', 1, 0); 	
 	}
 		
 	// part 4
@@ -199,21 +196,32 @@ int main(int argc, char **argv) {
 	// use STDIN_FILENO to prompt for user input 
 	// check activity on client socket and store in inbuf; if "bye", exit
 	fd_set read_fds;
-	FD_ZERO(&read_fds);
-	FD_SET(client_socket, &read_fds);
-
-	while(true){
-		if(select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0){
-			perror("select failed"); 
+	bool running = true;
+	while(running){
+		FD_ZERO(&read_fds);
+		FD_SET(client_socket, &read_fds);
+		FD_SET(STDIN_FILENO, &read_fds);	
+		if (select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0 && errno != EINTR ) {
+			fprintf(stderr, "Error: Failed to select on file decriptors. %s.\n",
+					strerror(errno));
+			retval = EXIT_FAILURE;	 	
 			goto EXIT;
 		}
 
-		if(FD_ISSET(client_socket, &read_fds)){
-			handle_client_socket(client_socket);
+		if (FD_ISSET(client_socket, &read_fds) && running) { 	
+			if (handle_client_socket(client_socket) < 0) {
+				retval = EXIT_FAILURE;	 	
+				goto EXIT;
+			}
 		}
 
-		if(FD_ISSET(STDIN_FILENO, &read_fds)){
-			handle_stdin(client_socket);
+		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {
+			printf("[%s]:", username);
+			fflush(stdin);
+			if (handle_stdin(client_socket) < 0) {
+				retval = EXIT_FAILURE;	 	
+				goto EXIT;
+			}
 		}	
 	}
 
@@ -224,5 +232,4 @@ EXIT:
 		close(client_socket);
 	}
 	return retval;
-	
 }
