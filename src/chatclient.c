@@ -14,8 +14,6 @@ char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
 int handle_stdin(int client_socket){
-//	while(true){
-		printf("[%s]:", username);
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
 			perror("fgets()");
 		}
@@ -28,21 +26,18 @@ int handle_stdin(int client_socket){
 			/* Clears stdin */
 			int c;
 			while ((c = getchar()) != '\n' && c != EOF) {}
-	//		continue;
 		}
 
 		if(!strcmp(outbuf, "bye")){
 			printf("Goodbye.\n");
-			return -1; 
+			return 1; 
 		}
-
-	
-		if(send(client_socket, outbuf, strlen(outbuf), 0) < 0) {
+		int ret = send(client_socket, outbuf, strlen(outbuf) + 1, 0);
+		if(ret < 0) {
 			fprintf(stderr, "Error: Failed to send message to server.\n");
 			return -1;
 		}
-
-//	}
+		//printf("[%s]: ", username); 
 
 	return 0; 
 }
@@ -199,6 +194,8 @@ int main(int argc, char **argv) {
 	fd_set read_fds;
 	bool running = true;
 	while(running){
+		printf("[%s]: ", username);
+	       	fflush(stdin); 	
 		FD_ZERO(&read_fds);
 		FD_SET(client_socket, &read_fds);
 		FD_SET(STDIN_FILENO, &read_fds);
@@ -210,6 +207,7 @@ int main(int argc, char **argv) {
 		}
 
 		if (FD_ISSET(client_socket, &read_fds) && running) { 	
+			printf("\n"); 
 			if (handle_client_socket(client_socket) < 0) {
 				retval = EXIT_FAILURE;	 	
 				goto EXIT;
@@ -217,13 +215,15 @@ int main(int argc, char **argv) {
 		}
 
 		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {	
-			if (handle_stdin(client_socket) < 0) {
+			int ret = handle_stdin(client_socket);
+			if (ret < 0) {
 				retval = EXIT_FAILURE;	 	
 				goto EXIT;
 			}
+			else if (ret > 0){
+				goto EXIT;
+			}
 		}
-
-		
 
 			
 	}
