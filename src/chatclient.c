@@ -17,10 +17,10 @@ int handle_stdin(int client_socket){
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
 			perror("fgets()");
 		}
-		char *eoln = strchr(outbuf, '\n'); 
-		if(eoln != NULL){
-			*eoln = '\0';
-		}
+		//char *eoln = strchr(outbuf, '\n'); 
+		//if(eoln != NULL){
+		//	*eoln = '\0';
+		//}
 		if(strlen(outbuf) > MAX_MSG_LEN){
 			fprintf(stderr, "Sorry, limit your message to 1 line of at most %d characters.\n", MAX_MSG_LEN);
 			/* Clears stdin */
@@ -37,13 +37,13 @@ int handle_stdin(int client_socket){
 			fprintf(stderr, "Error: Failed to send message to server.\n");
 			return -1;
 		}
+		//printf("SENDING: %s\n", outbuf); 
 		//printf("[%s]: ", username); 
 
 	return 0; 
 }
 
-int handle_client_socket(int client_socket){
-	 memset(inbuf, 0, BUFLEN);
+int handle_client_socket(int client_socket){ memset(inbuf, 0, BUFLEN);
 	 int bytes_recvd; 
          if ((bytes_recvd = recv(client_socket, inbuf, BUFLEN-1, 0)) < 0) {
 		 if(errno != EINTR){
@@ -57,7 +57,7 @@ int handle_client_socket(int client_socket){
 			 return -1;
 		 }
 		 else{
-			 printf("%s\n", inbuf); 
+			 printf("%s", inbuf); 
 		 }
 	 }
 
@@ -194,8 +194,8 @@ int main(int argc, char **argv) {
 	fd_set read_fds;
 	bool running = true;
 	while(running){
-		printf("[%s]: ", username);
-	       	fflush(stdin); 	
+		printf("[%s]: ", username); 
+		fflush(stdout); 
 		FD_ZERO(&read_fds);
 		FD_SET(client_socket, &read_fds);
 		FD_SET(STDIN_FILENO, &read_fds);
@@ -207,14 +207,16 @@ int main(int argc, char **argv) {
 		}
 
 		if (FD_ISSET(client_socket, &read_fds) && running) { 	
-			printf("\n"); 
+			printf("\n");
+		       	//printf("CLIENT SOCKET TRIGGERED\n");	
 			if (handle_client_socket(client_socket) < 0) {
 				retval = EXIT_FAILURE;	 	
 				goto EXIT;
 			}
 		}
 
-		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {	
+		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {
+			//printf("STDIN TRIGGERED\n"); 	
 			int ret = handle_stdin(client_socket);
 			if (ret < 0) {
 				retval = EXIT_FAILURE;	 	
