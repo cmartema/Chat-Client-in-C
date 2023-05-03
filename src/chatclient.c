@@ -14,8 +14,10 @@ char inbuf[BUFLEN + 1];
 char outbuf[MAX_MSG_LEN + 1];
 
 int handle_stdin(int client_socket){
+
 		if(fgets(outbuf, sizeof(outbuf), stdin) == NULL){
-			perror("fgets()");
+			//perror("fgets()");
+			return -1; 
 		}
 		
 		/*
@@ -24,7 +26,6 @@ int handle_stdin(int client_socket){
 			outbuf[--len] = '\0';
 		}
 		*/
-
 		
 		char *eoln = strchr(outbuf, '\n'); 
 		if(eoln != NULL){
@@ -38,6 +39,11 @@ int handle_stdin(int client_socket){
 			while ((c = getchar()) != '\n' && c != EOF) {}
 		}
 
+		if(strlen(outbuf) == 0){
+			//printf("\nshort string\n"); 
+			return 0;
+		}
+
 		if(!strcmp(outbuf, "bye")){
 			printf("Goodbye.\n");
 			return 1; 
@@ -47,9 +53,8 @@ int handle_stdin(int client_socket){
 			fprintf(stderr, "Error: Failed to send message to server.\n");
 			return -1;
 		}
-		printf("SENDING: %s\n", outbuf); 
-		//printf("[%s]: ", username); 
-
+		//printf("SENDING: %s\n", outbuf);
+		memset(outbuf, 0, MAX_MSG_LEN + 1);  
 	return 0; 
 }
 
@@ -67,7 +72,7 @@ int handle_client_socket(int client_socket){ memset(inbuf, 0, BUFLEN);
 			 return -1;
 		 }
 		 else{
-			 printf("RECEIVING: %s\n", outbuf);
+			 //printf("RECEIVING: %s\n", outbuf);
 			 printf("%s\n", inbuf); 		
 			
 
@@ -201,18 +206,31 @@ int main(int argc, char **argv) {
 	}
 		
 	// part 4
+	
+	if(!isatty(fileno(stdin))){
+		while(handle_stdin(client_socket) != -1){
+			continue;
+		}
+		goto EXIT; 
+	}
+	
+
 	// use fd_set and select to loop forever
 	// use STDIN_FILENO to prompt for user input 
 	// check activity on client socket and store in inbuf; if "bye", exit
 	fd_set read_fds;
 	bool running = true;
+	int numMsg = 0; 
 	while(running){
-		printf("[%s]: ", username); 
-		fflush(stdout); 
+		if (numMsg != 1){
+			printf("[%s]: ", username); 
+			fflush(stdout); 
+		}
 		FD_ZERO(&read_fds);
 		FD_SET(client_socket, &read_fds);
 		FD_SET(STDIN_FILENO, &read_fds);
-		if (select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0 && errno != EINTR ) {
+		if (select(client_socket + 1, &read_fds, NULL, NULL, NULL) < 0 && errno != EINTR) {
+			printf("Select failed."); 
 			fprintf(stderr, "Error: Failed to select on file decriptors. %s.\n",
 					strerror(errno));
 			retval = EXIT_FAILURE;	 	
@@ -229,7 +247,7 @@ int main(int argc, char **argv) {
 		}
 
 		if (FD_ISSET(STDIN_FILENO, &read_fds) && running) {
-			//printf("STDIN TRIGGERED\n"); 	
+			//printf("STDIN TRIGGERED\n");
 			int ret = handle_stdin(client_socket);
 			if (ret < 0) {
 				retval = EXIT_FAILURE;	 	
@@ -238,9 +256,9 @@ int main(int argc, char **argv) {
 			else if (ret > 0){
 				goto EXIT;
 			}
+			numMsg++; 
 		}
-
-			
+		//printf("end of while(running) loop\n");	
 	}
 
 
